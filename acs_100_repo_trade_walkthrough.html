@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: transparent; color: var(--text-primary, #1a1a1a); padding: 16px; }
+  h2.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+  .step-nav { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+  .step-btn {
+    padding: 6px 13px; border-radius: 20px; border: 1.5px solid var(--border, #d0d0d0);
+    background: var(--surface, #f5f5f5); cursor: pointer; font-size: 12px; font-weight: 500;
+    color: var(--text-secondary, #555); transition: all 0.15s;
+  }
+  .step-btn.active { background: var(--accent, #1a56db); border-color: var(--accent, #1a56db); color: #fff; }
+  .step-btn:hover:not(.active) { background: var(--surface-hover, #e8e8e8); }
+
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+
+  /* Party boxes */
+  .parties { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .party {
+    flex: 1; min-width: 120px; padding: 10px 12px; border-radius: 8px;
+    border: 2px solid transparent; font-size: 12px;
+  }
+  .party .party-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; opacity: 0.65; }
+  .party .party-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .party .party-desc { font-size: 11px; opacity: 0.75; }
+  .party.efc { background: #fff8e1; border-color: #f59e0b; }
+  .party.acm { background: #e8f4fd; border-color: #1a56db; }
+  .party.ficc { background: #f0fdf4; border-color: #16a34a; }
+  .party.mmf { background: #fdf2f8; border-color: #9333ea; }
+  .party.dim { opacity: 0.35; }
+
+  /* Flow diagram */
+  .flow-diagram { background: var(--surface, #f8f8f8); border: 1px solid var(--border, #e0e0e0); border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+  .flow-row { display: flex; align-items: center; gap: 0; margin-bottom: 10px; }
+  .flow-row:last-child { margin-bottom: 0; }
+  .flow-box {
+    padding: 8px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    text-align: center; min-width: 80px; flex-shrink: 0;
+  }
+  .flow-efc { background: #fff8e1; border: 1.5px solid #f59e0b; color: #92400e; }
+  .flow-acm { background: #e8f4fd; border: 1.5px solid #1a56db; color: #1e3a8a; }
+  .flow-ficc { background: #f0fdf4; border: 1.5px solid #16a34a; color: #14532d; }
+  .flow-mmf { background: #fdf2f8; border: 1.5px solid #9333ea; color: #581c87; }
+  .flow-arrow {
+    flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 4px;
+    font-size: 10px; color: var(--text-secondary, #666);
+  }
+  .arrow-line { width: 100%; height: 2px; background: var(--text-secondary, #888); position: relative; }
+  .arrow-line::after { content: '▶'; position: absolute; right: -5px; top: -7px; font-size: 10px; color: var(--text-secondary, #888); }
+  .arrow-label { font-size: 10px; color: var(--text-secondary, #555); margin-top: 3px; text-align: center; white-space: nowrap; }
+
+  /* Accounting table */
+  .acct-section { margin-bottom: 14px; }
+  .acct-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: var(--text-secondary, #555); }
+  .acct-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .acct-table th { background: var(--surface, #f0f0f0); padding: 7px 10px; text-align: left; font-weight: 600; border-bottom: 1.5px solid var(--border, #d0d0d0); }
+  .acct-table td { padding: 6px 10px; border-bottom: 1px solid var(--border, #e8e8e8); vertical-align: top; line-height: 1.4; }
+  .acct-table tr:last-child td { border-bottom: none; }
+  .yes { color: #16a34a; font-weight: 700; }
+  .no { color: #dc2626; font-weight: 700; }
+  .note { color: #9333ea; font-weight: 700; }
+  .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+  .tag-on { background: #fee2e2; color: #991b1b; }
+  .tag-off { background: #dcfce7; color: #14532d; }
+  .tag-cont { background: #ede9fe; color: #5b21b6; }
+
+  /* Key insight box */
+  .insight { background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 10px 13px; font-size: 12px; line-height: 1.5; margin-top: 12px; }
+  .insight strong { color: #92400e; }
+
+  /* Step title */
+  .step-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .step-subtitle { font-size: 12px; color: var(--text-secondary, #666); margin-bottom: 14px; }
+
+  /* Comparison bar at bottom */
+  .compare-row { display: flex; gap: 10px; margin-top: 14px; }
+  .compare-box { flex: 1; padding: 10px 12px; border-radius: 8px; font-size: 11px; line-height: 1.45; }
+  .compare-acm { background: #e8f4fd; border: 1.5px solid #1a56db; }
+  .compare-sm { background: #fff8e1; border: 1.5px solid #f59e0b; }
+  .compare-box .cb-label { font-weight: 700; font-size: 11px; margin-bottom: 5px; }
+</style>
+</head>
+<body>
+<h2 class="sr-only">Step-by-step walkthrough of a $100 overnight UST repo under the FICC Agent Clearing Service, showing trade mechanics and accounting treatment at each stage.</h2>
+
+<div class="step-nav">
+  <button class="step-btn active" onclick="showStep(0)">① Parties</button>
+  <button class="step-btn" onclick="showStep(1)">② Trade Agreed</button>
+  <button class="step-btn" onclick="showStep(2)">③ Submission to FICC</button>
+  <button class="step-btn" onclick="showStep(3)">④ Novation</button>
+  <button class="step-btn" onclick="showStep(4)">⑤ Daily Marks</button>
+  <button class="step-btn" onclick="showStep(5)">⑥ End Leg / Maturity</button>
+  <button class="step-btn" onclick="showStep(6)">⑦ Balance Sheet Summary</button>
+</div>
+
+<!-- STEP 0: Parties -->
+<div class="step-panel active" id="step-0">
+  <div class="step-title">The Four Parties</div>
+  <div class="step-subtitle">Overnight $100 UST repo — each party's role before any trade</div>
+  <div class="parties">
+    <div class="party efc">
+      <div class="party-label">EFC</div>
+      <div class="party-name">Hedge Fund</div>
+      <div class="party-desc">Holds $100 UST. Wants overnight cash (repo seller / collateral provider). Not a FICC member.</div>
+    </div>
+    <div class="party acm">
+      <div class="party-label">ACM</div>
+      <div class="party-name">The Bank</div>
+      <div class="party-desc">FICC Netting Member. Acts solely as <strong>agent</strong> of the EFC. Submits and clears on EFC's behalf. Never owns the repo.</div>
+    </div>
+    <div class="party ficc">
+      <div class="party-label">CCP</div>
+      <div class="party-name">FICC / GSD</div>
+      <div class="party-desc">Central counterparty. Novates the trade — steps in between all parties. Runs the Funds-Only Settlement daily.</div>
+    </div>
+    <div class="party mmf">
+      <div class="party-label">Cash Provider</div>
+      <div class="party-name">Money Mkt Fund</div>
+      <div class="party-desc">Has $100 cash. Wants UST as collateral overnight (reverse repo buyer). Clears through its own FICC Netting Member.</div>
+    </div>
+  </div>
+  <div class="insight"><strong>Key rule:</strong> The EFC (hedge fund) is NOT a FICC member and cannot submit trades directly. It needs the ACM to clear on its behalf under Rule 8. The ACM does not take the other side of the trade — it is purely the submission and clearing conduit.</div>
+</div>
+
+<!-- STEP 1: Trade Agreed -->
+<div class="step-panel" id="step-1">
+  <div class="step-title">Step 1 — Bilateral Trade Negotiation</div>
+  <div class="step-subtitle">EFC and MMF agree terms. ACM is not yet involved.</div>
+  <div class="flow-diagram">
+    <div class="flow-row">
+      <div class="flow-box flow-efc">HF / EFC</div>
+      <div class="flow-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">$100 UST (start leg)</div>
+      </div>
+      <div class="flow-box flow-mmf">MMF</div>
+    </div>
+    <div class="flow-row">
+      <div class="flow-box flow-efc">HF / EFC</div>
+      <div class="flow-arrow" style="transform: scaleX(-1);">
+        <div class="arrow-line"></div>
+      </div>
+      <div class="flow-box flow-mmf">MMF</div>
+    </div>
+    <div style="font-size:10px; color: var(--text-secondary,#666); margin-top:4px; text-align:center;">← $100 cash received by EFC</div>
+  </div>
+  <table class="acct-table">
+    <tr><th>Item</th><th>Value</th><th>Note</th></tr>
+    <tr><td>Repo principal</td><td><strong>$100.00</strong></td><td>Face value of overnight repo</td></tr>
+    <tr><td>Collateral</td><td>$100 UST</td><td>Specific CUSIP or GC pool</td></tr>
+    <tr><td>Repo rate</td><td>5.50% p.a.</td><td>Agreed bilaterally</td></tr>
+    <tr><td>Overnight interest</td><td><strong>$0.0153</strong></td><td>$100 × 5.50% ÷ 360</td></tr>
+    <tr><td>End leg repurchase price</td><td><strong>$100.0153</strong></td><td>EFC repurchases tomorrow</td></tr>
+    <tr><td>ACM role at this stage</td><td colspan="2">None — trade negotiated bilaterally between EFC and MMF (or via IDB broker)</td></tr>
+  </table>
+  <div class="insight"><strong>Critical point:</strong> The ACM is not the counterparty here. There is no moment where the bank "owns" the $100 repo and then passes it on. The bilateral trade is EFC ↔ MMF from the start. This is why ASC 606 classifies the ACM as agent — it never controls the underlying repo.</div>
+</div>
+
+<!-- STEP 2: Submission -->
+<div class="step-panel" id="step-2">
+  <div class="step-title">Step 2 — ACM Submits to FICC</div>
+  <div class="step-subtitle">ACM submits the locked-in trade on EFC's behalf. EFC ID mandatory on every record (Rule 8 §7(a)).</div>
+  <div class="flow-diagram">
+    <div class="flow-row">
+      <div class="flow-box flow-efc">HF / EFC</div>
+      <div class="flow-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">instructs ACM</div>
+      </div>
+      <div class="flow-box flow-acm">ACM (Bank)</div>
+      <div class="flow-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">submits via Rule 6A/B/C<br>with EFC identifier</div>
+      </div>
+      <div class="flow-box flow-ficc">FICC</div>
+    </div>
+  </div>
+  <table class="acct-table">
+    <tr><th>What is submitted</th><th>Detail</th></tr>
+    <tr><td>ACM Omnibus Account</td><td>The trade lands in the ACM's Omnibus Account at FICC — but tagged to the EFC's LEI on every record</td></tr>
+    <tr><td>EFC identifier</td><td>Mandatory per Rule 8 §7(a). Trade is rejected without it.</td></tr>
+    <tr><td>Trade data</td><td>CUSIP / GC pool, $100 principal, rate 5.50%, start leg today, end leg tomorrow</td></tr>
+    <tr><td>ACM's legal capacity</td><td>Acting <strong>solely as agent</strong> of the EFC (Rule 8 §5(b)). No proprietary interest.</td></tr>
+  </table>
+  <div class="insight"><strong>The ACM Omnibus Account</strong> is the legal vehicle through which FICC sees the trade. But FICC's own records identify the EFC behind every position. The ACM is the submission pipe, not the economic owner.</div>
+</div>
+
+<!-- STEP 3: Novation -->
+<div class="step-panel" id="step-3">
+  <div class="step-title">Step 3 — FICC Novation (Rule 5 §8)</div>
+  <div class="step-subtitle">The original bilateral trade is extinguished. FICC steps in as CCP on both sides.</div>
+  <div class="flow-diagram">
+    <div style="font-size:11px; font-weight:600; margin-bottom:8px; color:var(--text-secondary,#666);">BEFORE NOVATION</div>
+    <div class="flow-row">
+      <div class="flow-box flow-efc">HF / EFC</div>
+      <div class="flow-arrow"><div class="arrow-line"></div><div class="arrow-label">$100 repo</div></div>
+      <div class="flow-box flow-mmf">MMF</div>
+    </div>
+    <div style="font-size:11px; font-weight:600; margin: 12px 0 8px; color:var(--text-secondary,#666);">AFTER NOVATION</div>
+    <div class="flow-row">
+      <div class="flow-box flow-acm">ACM Omnibus<br><span style="font-size:9px;opacity:0.7;">(for EFC)</span></div>
+      <div class="flow-arrow"><div class="arrow-line"></div><div class="arrow-label">$100 repo obligation<br>ACM "fully liable"<br>Rule 8 §5(d)</div></div>
+      <div class="flow-box flow-ficc">FICC</div>
+      <div class="flow-arrow"><div class="arrow-line"></div><div class="arrow-label">$100 reverse repo<br>vs. MMF's member</div></div>
+      <div class="flow-box flow-mmf">MMF's<br>Netting Member</div>
+    </div>
+  </div>
+
+  <div class="acct-section" style="margin-top:14px;">
+    <div class="acct-title">What does "fully liable to FICC" actually mean?</div>
+    <table class="acct-table">
+      <tr><th>Obligation</th><th>Who bears it?</th><th>ASC 606 treatment</th></tr>
+      <tr>
+        <td>Deliver $100 UST to FICC (start leg)</td>
+        <td>ACM Omnibus — <strong>conditional on EFC delivering</strong></td>
+        <td>Pass-through. ACM has no inventory risk.</td>
+      </tr>
+      <tr>
+        <td>Receive $100.0153 at end leg</td>
+        <td>ACM collects for EFC's account</td>
+        <td>EFC's asset. Fee receivable only on ACM books.</td>
+      </tr>
+      <tr>
+        <td>ACM fails to perform?</td>
+        <td>FICC holds ACM liable. ACM then has a <strong>direct claim vs EFC</strong> under Rule 8 §10 and bilateral docs.</td>
+        <td>Contingent liability — disclosed, not recognized as balance-sheet repo position.</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="compare-row">
+    <div class="compare-box compare-acm">
+      <div class="cb-label">🏦 ACM Balance Sheet at Novation</div>
+      <span class="tag tag-off">OFF B/S</span> No repo asset ($100)<br>
+      <span class="tag tag-off">OFF B/S</span> No repo liability ($100)<br>
+      <span class="tag tag-cont">CONTINGENT</span> FICC obligation (Rule 8 §5(d))<br>
+      <span class="tag tag-on">ON B/S</span> Fee receivable (~$0.001)
+    </div>
+    <div class="compare-box compare-sm">
+      <div class="cb-label">⚖️ Sponsored SM Balance Sheet (for contrast)</div>
+      <span class="tag tag-on">ON B/S</span> $100 reverse repo asset (vs FICC)<br>
+      <span class="tag tag-on">ON B/S</span> $100 repo liability (vs FICC)<br>
+      <span class="tag tag-on">ON B/S</span> SM Guaranty at fair value (ASC 460)<br>
+      <em style="font-size:10px;">→ Subject to ASC 210-20 netting analysis</em>
+    </div>
+  </div>
+  <div class="insight"><strong>The novation does not make the ACM a principal.</strong> ASC 606-10-55-39 tests control before transfer. The ACM never controlled the repo at any point — not pre-trade, not post-novation. The "fully liable" language in Rule 8 is a <em>clearing rule</em> requirement, not an accounting reclassification trigger.</div>
+</div>
+
+<!-- STEP 4: Daily Marks -->
+<div class="step-panel" id="step-4">
+  <div class="step-title">Step 4 — Daily Funds-Only Settlement (Rule 13)</div>
+  <div class="step-subtitle">Collateral and rate marks flow daily. Who records P&L?</div>
+  <div class="flow-diagram">
+    <div style="font-size:11px; font-weight:600; margin-bottom:8px;">Scenario: UST collateral drops $0.50 in value overnight. FICC calls margin.</div>
+    <div class="flow-row">
+      <div class="flow-box flow-ficc">FICC</div>
+      <div class="flow-arrow"><div class="arrow-line"></div><div class="arrow-label">calls $0.50 Funds-Only<br>Settlement Amount</div></div>
+      <div class="flow-box flow-acm">ACM Omnibus</div>
+      <div class="flow-arrow"><div class="arrow-line"></div><div class="arrow-label">passes through<br>to EFC</div></div>
+      <div class="flow-box flow-efc">HF / EFC</div>
+    </div>
+  </div>
+
+  <table class="acct-table" style="margin-top:12px;">
+    <tr><th>Entry</th><th>ACM books</th><th>EFC books</th></tr>
+    <tr>
+      <td>Variation margin call ($0.50)</td>
+      <td><span class="tag tag-off">PASS-THROUGH</span><br>Dr: EFC payable $0.50<br>Cr: FICC payable $0.50<br><em>Net P&amp;L impact: $0</em></td>
+      <td>Dr: Loss / margin account $0.50<br>Cr: Payable to ACM $0.50</td>
+    </tr>
+    <tr>
+      <td>ACM service fee</td>
+      <td><span class="tag tag-on">ON B/S</span><br>Dr: Fee receivable $0.001<br>Cr: Fee income $0.001</td>
+      <td>Dr: Clearing fee expense $0.001</td>
+    </tr>
+    <tr>
+      <td>Collateral substitution</td>
+      <td>Operational pass-through. ACM instructs Clearing Agent Bank on EFC's behalf. No P&amp;L.</td>
+      <td>New CUSIP reflected in EFC's custody records.</td>
+    </tr>
+  </table>
+  <div class="insight"><strong>The daily P&amp;L from collateral marks belongs entirely to the EFC.</strong> The ACM is a conduit for the Funds-Only Settlement flow. This is the clearest behavioral test of agent classification under ASC 606: if you bear the upside/downside of the mark, you are principal. The ACM does not.</div>
+</div>
+
+<!-- STEP 5: End Leg -->
+<div class="step-panel" id="step-5">
+  <div class="step-title">Step 5 — End Leg Maturity (T+1)</div>
+  <div class="step-subtitle">EFC repurchases the UST. The $100.0153 flows back. Trade closes.</div>
+  <div class="flow-diagram">
+    <div class="flow-row">
+      <div class="flow-box flow-efc">HF / EFC</div>
+      <div class="flow-arrow"><div class="arrow-line"></div><div class="arrow-label">$100.0153 cash<br>(principal + interest)</div></div>
+      <div class="flow-box flow-acm">ACM Omnibus</div>
+      <div class="flow-arrow"><div class="arrow-line"></div><div class="arrow-label">settles via FICC DvP<br>(or Clearing Agent Bank for GC)</div></div>
+      <div class="flow-box flow-ficc">FICC</div>
+    </div>
+    <div class="flow-row" style="margin-top:8px;">
+      <div class="flow-box flow-ficc">FICC</div>
+      <div class="flow-arrow"><div class="arrow-line"></div><div class="arrow-label">$100 UST returned</div></div>
+      <div class="flow-box flow-acm">ACM Omnibus</div>
+      <div class="flow-arrow"><div class="arrow-line"></div><div class="arrow-label">delivered to EFC</div></div>
+      <div class="flow-box flow-efc">HF / EFC</div>
+    </div>
+  </div>
+  <table class="acct-table" style="margin-top:12px;">
+    <tr><th>Flow</th><th>ACM Records</th></tr>
+    <tr><td>$100 principal repayment</td><td>Pass-through. Zero net impact. No position was on ACM's books.</td></tr>
+    <tr><td>$0.0153 interest</td><td>Pass-through to EFC. ACM records no NIM — it was never lender or borrower.</td></tr>
+    <tr><td>Clearing fee collected</td><td>Dr: Cash / Nostro &nbsp; Cr: Fee receivable (close out the ~$0.001 booked at submission)</td></tr>
+    <tr><td>EFC default scenario</td><td>ACM must fund FICC ($100.0153). ACM then holds a claim against EFC under Rule 8 §10. This triggers <strong>credit loss recognition</strong> under ASC 326 — but only if EFC defaults.</td></tr>
+  </table>
+  <div class="insight"><strong>If EFC defaults:</strong> The ACM's contingent obligation to FICC crystallizes into an actual liability. The ACM funds FICC, then pursues the EFC. The loss provision at that point is an ASC 326 credit loss on the EFC receivable — not a repo mark-to-market loss, because the ACM never held the repo asset.</div>
+</div>
+
+<!-- STEP 6: Balance Sheet Summary -->
+<div class="step-panel" id="step-6">
+  <div class="step-title">Full Balance Sheet Map — ACM vs. SM</div>
+  <div class="step-subtitle">What actually sits on each party's balance sheet across the entire trade lifecycle</div>
+  <table class="acct-table">
+    <tr>
+      <th>Item</th>
+      <th>ACM (Agent Clearing)</th>
+      <th>SM (Sponsored — for contrast)</th>
+    </tr>
+    <tr>
+      <td><strong>Repo asset ($100 reverse repo)</strong></td>
+      <td><span class="tag tag-off">OFF B/S</span> Never recognized. EFC's asset.</td>
+      <td><span class="tag tag-on">ON B/S</span> Full $100 on trading book (subject to ASC 210-20 netting)</td>
+    </tr>
+    <tr>
+      <td><strong>Repo liability ($100 repo)</strong></td>
+      <td><span class="tag tag-off">OFF B/S</span> Never recognized.</td>
+      <td><span class="tag tag-on">ON B/S</span> Full $100 (subject to netting)</td>
+    </tr>
+    <tr>
+      <td><strong>FICC-facing obligation post-novation</strong></td>
+      <td><span class="tag tag-cont">CONTINGENT</span> Disclosed. Recognized only on EFC default under ASC 326.</td>
+      <td><span class="tag tag-on">ON B/S</span> Live position — part of the gross repo book</td>
+    </tr>
+    <tr>
+      <td><strong>Client guaranty</strong></td>
+      <td><span class="tag tag-off">N/A</span> No guaranty issued. No ASC 460 entry.</td>
+      <td><span class="tag tag-on">ON B/S</span> SM Guaranty at fair value (ASC 460); ECL provision (ASC 326)</td>
+    </tr>
+    <tr>
+      <td><strong>Collateral marks / variation margin</strong></td>
+      <td><span class="tag tag-off">OFF B/S</span> Pass-through. No P&amp;L.</td>
+      <td><span class="tag tag-on">ON B/S</span> Hits P&amp;L daily as mark-to-market</td>
+    </tr>
+    <tr>
+      <td><strong>Service fee receivable</strong></td>
+      <td><span class="tag tag-on">ON B/S</span> ~$0.001 — recognized when service performed (ASC 606)</td>
+      <td><span class="tag tag-off">N/A</span> No fee — earns NIM instead</td>
+    </tr>
+    <tr>
+      <td><strong>Revenue recognition</strong></td>
+      <td>Fee income only (~$0.001). No NIM.</td>
+      <td>NIM ($100 × rate spread). Gross interest income and expense.</td>
+    </tr>
+    <tr>
+      <td><strong>SLR exposure measure</strong></td>
+      <td><span class="tag tag-off">ZERO</span> No principal repo on balance sheet.</td>
+      <td><span class="tag tag-on">$100</span> Inflates leverage measure (unless ASC 210-20 / IAS 32 netting met)</td>
+    </tr>
+    <tr>
+      <td><strong>RWA — principal trade</strong></td>
+      <td><span class="tag tag-off">ZERO</span> on client legs</td>
+      <td><span class="tag tag-on">~$56k</span> per $1bn (SA-CCR × 2% QCCP RW × 1.4 alpha)</td>
+    </tr>
+  </table>
+  <div class="insight" style="margin-top:12px;">
+    <strong>The one-line answer:</strong> The only item that belongs on the ACM's balance sheet is the <strong>fee receivable (~$0.001 per $100 repo)</strong>. Everything else — the $100 repo asset, the $100 repo liability, the collateral marks, the NIM — belongs to the EFC or passes through without recognition. The FICC-facing obligation after novation is real but contingent: it becomes a balance sheet item only if the EFC defaults, at which point it is a credit loss under ASC 326, not a repo position.
+  </div>
+</div>
+
+<script>
+function showStep(n) {
+  document.querySelectorAll('.step-panel').forEach((p,i) => {
+    p.classList.toggle('active', i === n);
+  });
+  document.querySelectorAll('.step-btn').forEach((b,i) => {
+    b.classList.toggle('active', i === n);
+  });
+}
+</script>
+</body>
+</html>
