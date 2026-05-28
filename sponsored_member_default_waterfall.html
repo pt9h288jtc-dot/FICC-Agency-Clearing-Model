@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FICC Sponsored Repo — Sponsored Member Default Recovery Waterfall</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy:    #0F172A;
+    --navy2:   #1E293B;
+    --blue:    #1A56DB;
+    --blueL:   #DBEAFE;
+    --teal:    #0891B2;
+    --tealL:   #CFFAFE;
+    --amber:   #D97706;
+    --amberL:  #FEF3C7;
+    --green:   #15803D;
+    --greenL:  #DCFCE7;
+    --red:     #B91C1C;
+    --redL:    #FEE2E2;
+    --purple:  #7C3AED;
+    --purpleL: #EDE9FE;
+    --slate:   #64748B;
+    --slateL:  #F1F5F9;
+    --white:   #FFFFFF;
+    --border:  #E2E8F0;
+    --text:    #1E293B;
+  }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--slateL); color: var(--text); min-height: 100vh; }
+
+  /* ── Header ── */
+  .hdr { background: var(--navy); color: var(--white); padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; }
+  .hdr-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .hdr-sub { font-size: 12px; color: #94A3B8; margin-top: 3px; }
+  .hdr-badge { background: var(--red); color: var(--white); font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 3px; letter-spacing: 0.5px; }
+
+  /* ── Main layout ── */
+  .main { max-width: 1200px; margin: 0 auto; padding: 20px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+
+  /* ── Cards ── */
+  .card { background: var(--white); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+  .card-hdr { padding: 10px 16px; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .card-body { padding: 16px; }
+
+  /* ── Trade Flow Diagram ── */
+  .flow-diagram { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: nowrap; padding: 12px 0; }
+  .flow-box { text-align: center; flex-shrink: 0; }
+  .flow-node { border-radius: 6px; padding: 8px 10px; font-size: 11px; font-weight: 700; min-width: 74px; position: relative; }
+  .flow-node .sub { font-size: 9px; font-weight: 400; opacity: 0.8; margin-top: 2px; }
+  .flow-node.hf { background: #FEF3C7; border: 2px solid var(--amber); color: #92400E; }
+  .flow-node.sm { background: var(--blueL); border: 2px solid var(--blue); color: #1E40AF; }
+  .flow-node.ficc { background: var(--purpleL); border: 2px solid var(--purple); color: #5B21B6; }
+  .flow-node.mmf { background: var(--greenL); border: 2px solid var(--green); color: #166534; }
+  .flow-node.defaulting { border-style: dashed; border-width: 2px; position: relative; }
+  .flow-node.defaulting::after { content: '⚠ DEFAULT'; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 8px; font-weight: 700; color: var(--red); white-space: nowrap; background: #FEE2E2; padding: 1px 4px; border-radius: 2px; }
+  .flow-arrow { display: flex; flex-direction: column; align-items: center; padding: 0 6px; flex-shrink: 0; }
+  .arrow-line { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .arr-label { font-size: 8px; color: var(--slate); white-space: nowrap; }
+  .arr-sym { font-size: 16px; color: var(--slate); line-height: 1; }
+  .arr-sym.red { color: var(--red); }
+
+  /* ── Scenario Inputs ── */
+  .inp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .inp-group label { font-size: 11px; color: var(--slate); font-weight: 600; display: block; margin-bottom: 4px; }
+  .inp-group input[type=range] { width: 100%; accent-color: var(--blue); cursor: pointer; }
+  .inp-val { font-size: 16px; font-weight: 700; color: var(--navy); }
+  .inp-val span { font-size: 11px; font-weight: 400; color: var(--slate); }
+  .summary-box { margin-top: 14px; background: var(--slateL); border-radius: 6px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .s-item { text-align: center; }
+  .s-label { font-size: 9px; color: var(--slate); text-transform: uppercase; letter-spacing: 0.5px; }
+  .s-val { font-size: 15px; font-weight: 700; color: var(--navy); margin-top: 2px; }
+  .s-val.green { color: var(--green); }
+  .s-val.amber { color: var(--amber); }
+  .s-val.red { color: var(--red); }
+
+  /* ── Waterfall ── */
+  .waterfall-wrap { grid-column: 1 / -1; }
+  .wf-controls { display: flex; gap: 10px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .btn { padding: 7px 18px; border-radius: 5px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; letter-spacing: 0.3px; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--blue); color: var(--white); }
+  .btn-reset { background: var(--slateL); color: var(--slate); border: 1px solid var(--border); }
+  .btn-cascade { background: var(--red); color: var(--white); }
+  .scenario-label { font-size: 11px; font-weight: 700; color: var(--slate); }
+  .scenario-toggle { display: flex; gap: 6px; }
+  .stog { padding: 5px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--slateL); color: var(--slate); transition: all 0.15s; }
+  .stog.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
+
+  /* ── Waterfall layers ── */
+  .wf-body { padding: 16px; }
+  .wf-phase-title { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--slate); margin: 12px 0 8px; display: flex; align-items: center; gap: 8px; }
+  .wf-phase-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .boundary-line { margin: 6px 0 12px; border: none; border-top: 2px dashed var(--red); position: relative; }
+  .boundary-label { text-align: center; font-size: 10px; font-weight: 700; color: var(--red); background: var(--white); display: inline-block; padding: 0 8px; position: relative; top: -8px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+
+  .layer { display: grid; grid-template-columns: 28px 220px 1fr 90px 90px; align-items: center; gap: 12px; margin-bottom: 10px; opacity: 0.4; transition: opacity 0.4s; }
+  .layer.active { opacity: 1; }
+  .layer.dimmed { opacity: 0.25; }
+  .layer-num { font-size: 11px; font-weight: 700; color: var(--slate); text-align: center; }
+  .layer-info {}
+  .layer-name { font-size: 12px; font-weight: 700; color: var(--navy); }
+  .layer-sub { font-size: 10px; color: var(--slate); margin-top: 1px; }
+  .layer-bar-wrap { position: relative; height: 28px; background: var(--slateL); border-radius: 4px; overflow: visible; }
+  .layer-bar { height: 100%; border-radius: 4px; width: 0%; transition: width 0.8s ease-out; display: flex; align-items: center; padding-left: 8px; font-size: 10px; font-weight: 700; color: var(--white); white-space: nowrap; position: relative; }
+  .layer-capacity { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 9px; color: var(--slate); font-weight: 600; }
+  .layer-amount { font-size: 13px; font-weight: 700; text-align: right; }
+  .layer-status { display: flex; }
+  .badge { padding: 3px 7px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; }
+  .badge-green { background: var(--greenL); color: var(--green); }
+  .badge-amber { background: var(--amberL); color: var(--amber); }
+  .badge-red { background: var(--redL); color: var(--red); }
+  .badge-blue { background: var(--blueL); color: var(--blue); }
+  .badge-purple { background: var(--purpleL); color: var(--purple); }
+  .badge-gray { background: var(--slateL); color: var(--slate); }
+
+  /* ── Summary panel ── */
+  .summary-panel { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .sum-card { border-radius: 8px; padding: 14px 16px; }
+  .sum-card.green { background: var(--greenL); border: 1px solid #86EFAC; }
+  .sum-card.amber { background: var(--amberL); border: 1px solid #FCD34D; }
+  .sum-card.blue { background: var(--blueL); border: 1px solid #93C5FD; }
+  .sum-card .sc-label { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .sum-card .sc-label.green { color: var(--green); }
+  .sum-card .sc-label.amber { color: var(--amber); }
+  .sum-card .sc-label.blue { color: var(--blue); }
+  .sum-card .sc-val { font-size: 22px; font-weight: 700; color: var(--navy); margin: 6px 0 4px; }
+  .sum-card .sc-desc { font-size: 11px; color: var(--slate); line-height: 1.4; }
+
+  /* ── Insight box ── */
+  .insight-box { grid-column: 1 / -1; background: var(--navy); color: var(--white); border-radius: 8px; padding: 16px 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .insight-item .i-label { font-size: 10px; color: #94A3B8; letter-spacing: 0.5px; text-transform: uppercase; }
+  .insight-item .i-val { font-size: 14px; font-weight: 700; margin-top: 4px; }
+  .insight-item .i-val.green { color: #4ADE80; }
+  .insight-item .i-val.amber { color: #FCD34D; }
+  .insight-item .i-val.red { color: #F87171; }
+
+  /* ── Timeline ── */
+  .timeline { grid-column: 1 / -1; }
+  .tl-steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; padding: 16px; }
+  .tl-step { text-align: center; position: relative; }
+  .tl-step::before { content: ''; position: absolute; top: 16px; left: 50%; right: -50%; height: 2px; background: var(--border); z-index: 0; }
+  .tl-step:last-child::before { display: none; }
+  .tl-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-size: 12px; font-weight: 700; position: relative; z-index: 1; transition: all 0.4s; }
+  .tl-dot.idle { background: var(--slateL); color: var(--slate); border: 2px solid var(--border); }
+  .tl-dot.done { background: var(--green); color: var(--white); border: 2px solid var(--green); }
+  .tl-dot.current { background: var(--amber); color: var(--white); border: 2px solid var(--amber); }
+  .tl-step-name { font-size: 10px; font-weight: 600; color: var(--navy); }
+  .tl-step-sub { font-size: 9px; color: var(--slate); margin-top: 2px; }
+
+  /* ── Footnote ── */
+  .footnote { grid-column: 1 / -1; font-size: 10px; color: var(--slate); line-height: 1.5; padding: 12px 0 4px; border-top: 1px solid var(--border); }
+
+  /* ── Cascade hidden section ── */
+  .cascade-section { grid-column: 1 / -1; display: none; }
+  .cascade-section.visible { display: block; }
+</style>
+</head>
+<body>
+
+<h2 class="sr-only" style="position:absolute;clip:rect(0 0 0 0);overflow:hidden;">
+  Interactive waterfall showing FICC Sponsored Repo Sponsored Member default recovery sequence across all funding pools
+</h2>
+
+<!-- Header -->
+<div class="hdr">
+  <div>
+    <div class="hdr-title">FICC Sponsored Repo (Rule 3A) — Sponsored Member Default Recovery</div>
+    <div class="hdr-sub">Done-With Structure · Loss Waterfall &amp; Funding Pool Sequence · Interactive Scenario Analysis</div>
+  </div>
+  <div class="hdr-badge">INTERNAL — ILLUSTRATIVE ONLY</div>
+</div>
+
+<div class="main">
+
+  <!-- === TRADE SETUP === -->
+  <div class="card">
+    <div class="card-hdr" style="background:#F8FAFC">
+      <span style="color:var(--blue)">●</span> Trade Setup — Done-With Structure
+    </div>
+    <div class="card-body">
+      <div class="flow-diagram">
+        <div class="flow-box">
+          <div class="flow-node hf defaulting" id="hf-node">
+            HF / EFC<div class="sub">Cash Borrower<br>Collateral Provider</div>
+          </div>
+        </div>
+        <div class="flow-arrow">
+          <div class="arrow-line">
+            <div class="arr-label">UST →</div>
+            <div class="arr-sym">⟷</div>
+            <div class="arr-label">← Cash</div>
+          </div>
+        </div>
+        <div class="flow-box">
+          <div class="flow-node sm" id="sm-node">
+            SM (Bank)<div class="sub">Rule 3A<br>Netting Member</div>
+          </div>
+        </div>
+        <div class="flow-arrow">
+          <div class="arrow-line">
+            <div class="arr-label">Novation</div>
+            <div class="arr-sym">→</div>
+            <div class="arr-label">GSD</div>
+          </div>
+        </div>
+        <div class="flow-box">
+          <div class="flow-node ficc">
+            FICC/GSD<div class="sub">CCP<br>Rule 3A §5</div>
+          </div>
+        </div>
+        <div class="flow-arrow">
+          <div class="arrow-line">
+            <div class="arr-label">Repo</div>
+            <div class="arr-sym">⟷</div>
+            <div class="arr-label">EFC leg</div>
+          </div>
+        </div>
+        <div class="flow-box">
+          <div class="flow-node mmf">
+            MMF<div class="sub">Cash Lender<br>Cash Provider</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pre-default position details -->
+      <div style="margin-top:12px;font-size:11px;color:var(--slate);background:var(--slateL);border-radius:6px;padding:10px 12px;line-height:1.7">
+        <strong style="color:var(--navy)">Pre-Default Position (Done-With):</strong><br>
+        HF sold UST to SM bilaterally → SM submitted to FICC under Rule 3A → FICC novated → SM has FICC-facing reverse repo (on B/S) + obligation to return UST to FICC for MMF.
+        SM holds <strong>first-priority perfected UCC security interest</strong> in HF's UST collateral per Rule 3A §16.
+      </div>
+
+      <!-- Timeline -->
+      <div style="margin-top:14px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--slate);margin-bottom:8px">Default Event Timeline</div>
+        <div class="tl-steps" id="timeline">
+          <div class="tl-step">
+            <div class="tl-dot idle" id="tl-0">1</div>
+            <div class="tl-step-name">HF Fails</div>
+            <div class="tl-step-sub">Repo matures, HF cannot repurchase UST</div>
+          </div>
+          <div class="tl-step">
+            <div class="tl-dot idle" id="tl-1">2</div>
+            <div class="tl-step-name">Margin Applied</div>
+            <div class="tl-step-sub">FICC applies HF margin (VM + IM)</div>
+          </div>
+          <div class="tl-step">
+            <div class="tl-dot idle" id="tl-2">3</div>
+            <div class="tl-step-name">Collateral Liquidation</div>
+            <div class="tl-step-sub">SM enforces §16 lien, liquidates UST</div>
+          </div>
+          <div class="tl-step">
+            <div class="tl-dot idle" id="tl-3">4</div>
+            <div class="tl-step-name">SM Guaranty Called</div>
+            <div class="tl-step-sub">SM covers residual from own capital</div>
+          </div>
+          <div class="tl-step">
+            <div class="tl-dot idle" id="tl-4">5</div>
+            <div class="tl-step-name">FICC Made Whole</div>
+            <div class="tl-step-sub">No Clearing Fund touched</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- === SCENARIO INPUTS === -->
+  <div class="card">
+    <div class="card-hdr" style="background:#F8FAFC">
+      <span style="color:var(--amber)">●</span> Scenario Inputs
+    </div>
+    <div class="card-body">
+      <div class="inp-grid">
+        <div class="inp-group">
+          <label>Repo Notional ($bn)</label>
+          <div class="inp-val" id="v-notional">$1.0 <span>bn</span></div>
+          <input type="range" id="sl-notional" min="0.5" max="5" step="0.5" value="1">
+        </div>
+        <div class="inp-group">
+          <label>UST Price Drop (%)</label>
+          <div class="inp-val" id="v-drop" style="color:var(--red)">4.0 <span>%</span></div>
+          <input type="range" id="sl-drop" min="0.5" max="15" step="0.5" value="4">
+        </div>
+        <div class="inp-group">
+          <label>Initial Margin / Haircut (%)</label>
+          <div class="inp-val" id="v-haircut">0.5 <span>%</span></div>
+          <input type="range" id="sl-haircut" min="0.25" max="3" step="0.25" value="0.5">
+        </div>
+        <div class="inp-group">
+          <label>Prior-Day VM Called (%)</label>
+          <div class="inp-val" id="v-vm">50 <span>% of loss</span></div>
+          <input type="range" id="sl-vm" min="0" max="90" step="10" value="50">
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <div class="s-item">
+          <div class="s-label">Gross MTM Loss</div>
+          <div class="s-val red" id="sv-gross">$40m</div>
+        </div>
+        <div class="s-item">
+          <div class="s-label">Total Margin Posted</div>
+          <div class="s-val green" id="sv-margin">$25m</div>
+        </div>
+        <div class="s-item">
+          <div class="s-label">Net Shortfall</div>
+          <div class="s-val amber" id="sv-net">$15m</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;font-size:10px;color:var(--slate);line-height:1.6">
+        <strong style="color:var(--navy)">Loss formula:</strong><br>
+        Gross loss = Notional × Price Drop %<br>
+        IM Buffer = Notional × Haircut %<br>
+        VM (prior day) = Gross Loss × VM% (already called)<br>
+        Net shortfall = Gross Loss − IM − VM<br>
+        <span style="color:var(--amber);font-weight:700">→ Net shortfall is covered entirely by the SM Guaranty</span>
+      </div>
+
+      <div style="margin-top:12px;font-size:10px;background:var(--amberL);border-radius:6px;padding:10px;color:#78350F;line-height:1.5;border-left:3px solid var(--amber)">
+        <strong>SM Guaranty (ASC 460 / Rule 3A):</strong> The Sponsoring Member is unconditionally obligated to make FICC whole for all losses arising from a Sponsored Member default. FICC does <em>not</em> look to its Clearing Fund or surviving members unless the SM itself subsequently defaults.
+      </div>
+    </div>
+  </div>
+
+  <!-- === WATERFALL (full width) === -->
+  <div class="card waterfall-wrap">
+    <div class="card-hdr" style="background:var(--navy2);color:var(--white);">
+      <span style="color:#60A5FA">●</span> Recovery Waterfall — Funding Pool Sequence
+      <span style="margin-left:auto;font-size:10px;font-weight:400;color:#94A3B8">Each layer is drawn before the next is triggered</span>
+    </div>
+
+    <div class="wf-controls">
+      <button class="btn btn-primary" id="btn-run" onclick="runWaterfall()">▶ Run Default Scenario</button>
+      <button class="btn btn-reset" onclick="resetWaterfall()">↺ Reset</button>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="scenario-label">Scenario:</span>
+        <div class="scenario-toggle">
+          <div class="stog active" id="tog-isolated" onclick="setScenario('isolated')">HF Default Only</div>
+          <div class="stog" id="tog-cascade" onclick="setScenario('cascade')">+ SM Also Defaults</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wf-body">
+
+      <!-- Phase 1: HF-funded recovery -->
+      <div class="wf-phase-title">Phase 1 — HF-Funded Recovery (Pre-Positioned)</div>
+
+      <div class="layer" id="layer-vm">
+        <div class="layer-num">1</div>
+        <div class="layer-info">
+          <div class="layer-name">HF Variation Margin (collected)</div>
+          <div class="layer-sub">Daily MTM called by FICC prior to default day — already held</div>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="bar-vm" style="background:var(--green)"></div>
+          <div class="layer-capacity" id="cap-vm"></div>
+        </div>
+        <div class="layer-amount" id="amt-vm" style="color:var(--green)">—</div>
+        <div class="layer-status"><span class="badge badge-gray" id="badge-vm">PENDING</span></div>
+      </div>
+
+      <div class="layer" id="layer-im">
+        <div class="layer-num">2</div>
+        <div class="layer-info">
+          <div class="layer-name">HF Initial Margin (Haircut)</div>
+          <div class="layer-sub">Posted at FICC · covers sudden market gap beyond daily VM</div>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="bar-im" style="background:var(--teal)"></div>
+          <div class="layer-capacity" id="cap-im"></div>
+        </div>
+        <div class="layer-amount" id="amt-im" style="color:var(--teal)">—</div>
+        <div class="layer-status"><span class="badge badge-gray" id="badge-im">PENDING</span></div>
+      </div>
+
+      <!-- Phase 2: SM Obligation -->
+      <div class="wf-phase-title" style="color:var(--amber)">Phase 2 — SM Guaranty Obligation (SM Absorbs)</div>
+
+      <div class="layer" id="layer-lien">
+        <div class="layer-num">3</div>
+        <div class="layer-info">
+          <div class="layer-name">SM First-Priority Security Interest</div>
+          <div class="layer-sub">Rule 3A §16 — SM enforces UCC lien, liquidates UST collateral; proceeds credited to FICC</div>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="bar-lien" style="background:#0891B2"></div>
+          <div class="layer-capacity" id="cap-lien"></div>
+        </div>
+        <div class="layer-amount" id="amt-lien" style="color:#0891B2">—</div>
+        <div class="layer-status"><span class="badge badge-blue" id="badge-lien">RULE 3A §16</span></div>
+      </div>
+
+      <div class="layer" id="layer-gty">
+        <div class="layer-num">4</div>
+        <div class="layer-info">
+          <div class="layer-name" style="color:var(--amber)">⭢ SM Guaranty (own capital) — KEY LAYER</div>
+          <div class="layer-sub">SM is unconditionally obligated to cover residual · FICC Clearing Fund NOT touched</div>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="bar-gty" style="background:var(--amber)"></div>
+          <div class="layer-capacity" id="cap-gty"></div>
+        </div>
+        <div class="layer-amount" id="amt-gty" style="color:var(--amber)">—</div>
+        <div class="layer-status"><span class="badge badge-amber" id="badge-gty">SM OBLIGATED</span></div>
+      </div>
+
+      <!-- Boundary -->
+      <div style="margin:14px 0 6px">
+        <hr class="boundary-line">
+        <div style="text-align:center;margin-top:-10px">
+          <span style="background:var(--white);padding:0 10px;font-size:11px;font-weight:700;color:var(--red)">
+            ─ ─ ─ FICC MUTUALIZATION BOUNDARY — Layers below triggered ONLY if SM also defaults ─ ─ ─
+          </span>
+        </div>
+      </div>
+
+      <!-- Phase 3: FICC-level (only if SM defaults too) -->
+      <div class="wf-phase-title" style="color:var(--red)">Phase 3 — FICC Mutualization (SM Default Required)</div>
+
+      <div class="layer" id="layer-smcf">
+        <div class="layer-num">5</div>
+        <div class="layer-info">
+          <div class="layer-name">SM's Clearing Fund Contribution</div>
+          <div class="layer-sub">SM-specific CF deposit — applied against SM's own default loss (not HF's)</div>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="bar-smcf" style="background:var(--purple)"></div>
+          <div class="layer-capacity" id="cap-smcf">~$100m</div>
+        </div>
+        <div class="layer-amount" id="amt-smcf" style="color:var(--purple)">—</div>
+        <div class="layer-status"><span class="badge badge-purple" id="badge-smcf">NOT TRIGGERED</span></div>
+      </div>
+
+      <div class="layer" id="layer-ficc">
+        <div class="layer-num">6</div>
+        <div class="layer-info">
+          <div class="layer-name">FICC Retained Earnings ("Designated Amount")</div>
+          <div class="layer-sub">FICC's own skin-in-the-game · ~$25m per DTCC Annual Report</div>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="bar-ficc" style="background:var(--blue)"></div>
+          <div class="layer-capacity" id="cap-ficc">~$25m</div>
+        </div>
+        <div class="layer-amount" id="amt-ficc" style="color:var(--blue)">—</div>
+        <div class="layer-status"><span class="badge badge-gray" id="badge-ficc">NOT TRIGGERED</span></div>
+      </div>
+
+      <div class="layer" id="layer-cf">
+        <div class="layer-num">7</div>
+        <div class="layer-info">
+          <div class="layer-name">Non-Defaulting Members' Clearing Fund (Pro-Rata)</div>
+          <div class="layer-sub">Mutualized loss sharing · GSD Clearing Fund ~$10bn total</div>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="bar-cf" style="background:var(--red)"></div>
+          <div class="layer-capacity" id="cap-cf">~$10bn</div>
+        </div>
+        <div class="layer-amount" id="amt-cf" style="color:var(--red)">—</div>
+        <div class="layer-status"><span class="badge badge-gray" id="badge-cf">NOT TRIGGERED</span></div>
+      </div>
+
+      <div class="layer" id="layer-cclf">
+        <div class="layer-num">8</div>
+        <div class="layer-info">
+          <div class="layer-name">CCLF — Capped Contingency Liquidity Facility</div>
+          <div class="layer-sub">Members commit to term repos · liquidity support, not loss absorption</div>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="bar-cclf" style="background:#475569"></div>
+          <div class="layer-capacity" id="cap-cclf">Committed</div>
+        </div>
+        <div class="layer-amount" id="amt-cclf" style="color:#475569">—</div>
+        <div class="layer-status"><span class="badge badge-gray" id="badge-cclf">LIQUIDITY ONLY</span></div>
+      </div>
+
+      <div class="layer" id="layer-assess">
+        <div class="layer-num">9</div>
+        <div class="layer-info">
+          <div class="layer-name">Assessments on Surviving Netting Members</div>
+          <div class="layer-sub">Last resort · up to 2× CF contribution per member · Rule 4 §5</div>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="bar-assess" style="background:#1E293B"></div>
+          <div class="layer-capacity" id="cap-assess">Last resort</div>
+        </div>
+        <div class="layer-amount" id="amt-assess" style="color:#1E293B">—</div>
+        <div class="layer-status"><span class="badge badge-gray" id="badge-assess">LAST RESORT</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- === Summary cards === -->
+  <div class="summary-panel">
+    <div class="sum-card green">
+      <div class="sc-label green">HF Margin Recovery</div>
+      <div class="sc-val" id="sc-margin-total">—</div>
+      <div class="sc-desc" id="sc-margin-desc">VM + IM pre-positioned at FICC. No incremental cost — already called from HF before default.</div>
+    </div>
+    <div class="sum-card amber">
+      <div class="sc-label amber">SM Guaranty Obligation</div>
+      <div class="sc-val" id="sc-sm-total">—</div>
+      <div class="sc-desc" id="sc-sm-desc">SM pays residual shortfall from its own capital. FICC is made whole. Clearing Fund is NOT drawn upon.</div>
+    </div>
+    <div class="sum-card blue">
+      <div class="sc-label blue">Other Clearing Members</div>
+      <div class="sc-val" style="color:var(--green)">$0</div>
+      <div class="sc-desc">Zero loss to other FICC members in an isolated Sponsored Member default. SM is the sole absorber.</div>
+    </div>
+  </div>
+
+  <!-- === Key Insight Banner === -->
+  <div class="insight-box">
+    <div class="insight-item">
+      <div class="i-label">SM Capital at Risk</div>
+      <div class="i-val amber" id="ins-sm-risk">Run scenario →</div>
+    </div>
+    <div class="insight-item">
+      <div class="i-label">FICC CF Triggered?</div>
+      <div class="i-val green" id="ins-cf-triggered">No — not in isolated default</div>
+    </div>
+    <div class="insight-item">
+      <div class="i-label">Loss Mutualized?</div>
+      <div class="i-val green" id="ins-mutualized">No — SM absorbs 100%</div>
+    </div>
+  </div>
+
+  <!-- === Cascade scenario (hidden until toggled) === -->
+  <div class="cascade-section card" id="cascade-section">
+    <div class="card-hdr" style="background:#FEF2F2;color:var(--red)">
+      ⚠ Cascading Default — SM Also Defaults (After Covering HF)
+    </div>
+    <div class="card-body" style="font-size:12px;color:var(--text);line-height:1.7">
+      <p style="margin-bottom:10px">If the Sponsoring Member cannot honour the Guaranty obligation (e.g., SM itself is in financial distress concurrent with a large HF default), FICC's own waterfall activates:</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <strong>FICC Rule 4 GSD Waterfall (SM Default):</strong>
+          <ol style="margin-top:6px;padding-left:18px;font-size:11px;line-height:2">
+            <li>SM's own margin deposits (net)</li>
+            <li>SM's Clearing Fund contribution (~$100m example)</li>
+            <li>FICC Retained Earnings (~$25m, "designated amount")</li>
+            <li>Non-defaulting members' CF — pro-rata allocation</li>
+            <li>CCLF — Capped Contingency Liquidity Facility draws</li>
+            <li>Loss allocation / assessments (up to 2× CF per member)</li>
+          </ol>
+        </div>
+        <div style="background:var(--amberL);border-radius:6px;padding:12px;border-left:3px solid var(--amber)">
+          <strong style="color:#92400E">Key Implication:</strong><br>
+          <span style="font-size:11px;color:#78350F">
+            The SM's obligations to FICC (from the SM Guaranty) rank alongside its other FICC obligations. In a cascading default, FICC's mutualized resources are the backstop — not just for Sponsored Member activity, but for the SM's entire book of FICC-cleared trades. This is why SM Guaranty RWA = 100% EFC risk weight: the SM is fully exposed as principal guarantor.
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footnote -->
+  <div class="footnote">
+    <strong>Sources:</strong> FICC GSD Rulebook Rule 3A (Sponsored Service), Rule 4 (Loss Allocation), Rule 8 (Agent Clearing); DTCC FICC Default Management Framework; 12 CFR §217 (Basel III Capital Rules).
+    All figures are illustrative. SM Clearing Fund contribution is an example estimate — actual contribution is calculated per GSD Rules based on SM's cleared activity.
+    CCLF: liquidity facility, not loss absorber — members commit to provide term repos to FICC to cover liquidity needs arising from a member default.
+    <strong>Internal Working Document — Not for external distribution.</strong>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let scenario = 'isolated';
+  let animating = false;
+
+  // ── Getters (reactive) ─────────────────────────────────────────────────────
+  function getNotional()  { return parseFloat(document.getElementById('sl-notional').value) * 1000; } // in $m
+  function getDropPct()   { return parseFloat(document.getElementById('sl-drop').value); }
+  function getHaircutPct(){ return parseFloat(document.getElementById('sl-haircut').value); }
+  function getVmPct()     { return parseFloat(document.getElementById('sl-vm').value); }
+
+  function calc() {
+    const N = getNotional();
+    const drop = getDropPct();
+    const hc   = getHaircutPct();
+    const vm   = getVmPct();
+    const grossLoss  = N * (drop / 100);
+    const im         = N * (hc / 100);
+    const vmCalled   = grossLoss * (vm / 100);
+    const totalMargin= im + vmCalled;
+    const netShort   = Math.max(0, grossLoss - totalMargin);
+    return { N, grossLoss, im, vmCalled, totalMargin, netShort };
+  }
+
+  function fmt(m) {
+    if (m === 0) return '$0';
+    if (m >= 1000) return '$' + (m/1000).toFixed(1) + 'bn';
+    return '$' + m.toFixed(1) + 'm';
+  }
+
+  // ── Live input updates ─────────────────────────────────────────────────────
+  function updateInputDisplay() {
+    const N = parseFloat(document.getElementById('sl-notional').value);
+    const drop = parseFloat(document.getElementById('sl-drop').value);
+    const hc = parseFloat(document.getElementById('sl-haircut').value);
+    const vm = parseFloat(document.getElementById('sl-vm').value);
+
+    document.getElementById('v-notional').innerHTML = '$' + N.toFixed(1) + ' <span>bn</span>';
+    document.getElementById('v-drop').innerHTML     = drop.toFixed(1) + ' <span>%</span>';
+    document.getElementById('v-haircut').innerHTML  = hc.toFixed(2) + ' <span>%</span>';
+    document.getElementById('v-vm').innerHTML       = vm + ' <span>% of loss</span>';
+
+    const c = calc();
+    document.getElementById('sv-gross').textContent  = fmt(c.grossLoss);
+    document.getElementById('sv-margin').textContent = fmt(c.totalMargin);
+    document.getElementById('sv-net').textContent    = fmt(c.netShort);
+
+    // Reset bars if inputs change
+    resetWaterfall(true);
+  }
+
+  ['sl-notional','sl-drop','sl-haircut','sl-vm'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateInputDisplay);
+  });
+
+  // ── Scenario toggle ─────────────────────────────────────────────────────────
+  function setScenario(s) {
+    scenario = s;
+    document.getElementById('tog-isolated').className = 'stog' + (s === 'isolated' ? ' active' : '');
+    document.getElementById('tog-cascade').className  = 'stog' + (s === 'cascade'  ? ' active' : '');
+    document.getElementById('cascade-section').className = 'cascade-section card' + (s === 'cascade' ? ' visible' : '');
+    resetWaterfall();
+  }
+
+  // ── Waterfall animation ────────────────────────────────────────────────────
+  function setBar(id, pct, text) {
+    const bar = document.getElementById('bar-' + id);
+    bar.style.width = Math.min(100, pct) + '%';
+    if (pct > 8) bar.textContent = text;
+    else bar.textContent = '';
+  }
+
+  function setBadge(id, text, cls) {
+    const b = document.getElementById('badge-' + id);
+    b.textContent = text;
+    b.className = 'badge badge-' + cls;
+  }
+
+  function setAmt(id, text, color) {
+    const el = document.getElementById('amt-' + id);
+    el.textContent = text;
+    if (color) el.style.color = color;
+  }
+
+  function setLayer(id, active) {
+    document.getElementById('layer-' + id).className = 'layer ' + (active ? 'active' : 'dimmed');
+  }
+
+  function setTl(i, state) {
+    const el = document.getElementById('tl-' + i);
+    el.className = 'tl-dot ' + state;
+    if (state === 'done') el.textContent = '✓';
+  }
+
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  async function runWaterfall() {
+    if (animating) return;
+    animating = true;
+    document.getElementById('btn-run').disabled = true;
+
+    const c = calc();
+    const { grossLoss, im, vmCalled, totalMargin, netShort } = c;
+    const N = getNotional();
+
+    // All layers start active but empty
+    ['vm','im','lien','gty','smcf','ficc','cf','cclf','assess'].forEach(id => setLayer(id, true));
+
+    // Phase 1: HF fails
+    setTl(0, 'current');
+    await delay(600);
+    setTl(0, 'done');
+
+    // Layer 1: VM
+    setTl(1, 'current');
+    const vmPct = vmCalled > 0 ? Math.min(100, (vmCalled / grossLoss) * 100) : 0;
+    document.getElementById('cap-vm').textContent = fmt(vmCalled);
+    setBar('vm', vmPct, fmt(vmCalled));
+    setAmt('vm', fmt(vmCalled));
+    setBadge('vm', 'CONSUMED', 'green');
+    await delay(800);
+
+    // Layer 2: IM
+    const imPct = Math.min(100, (im / grossLoss) * 80);
+    document.getElementById('cap-im').textContent = fmt(im);
+    setBar('im', imPct, fmt(im));
+    setAmt('im', fmt(im));
+    setBadge('im', 'CONSUMED', 'green');
+    await delay(800);
+    setTl(1, 'done');
+
+    // Layer 3: Security interest / collateral liquidation
+    setTl(2, 'current');
+    // The collateral has lost value; the "recovery" from collateral is factored in via the VM/IM already
+    // Show it as informational: SM enforces §16 lien, proceeds already captured in margin
+    const lienDisplay = fmt(N * (1 - getDropPct()/100)); // current collateral value
+    document.getElementById('cap-lien').textContent = lienDisplay;
+    setBar('lien', 85, 'UST liquidated');
+    setAmt('lien', lienDisplay + ' recovered');
+    setBadge('lien', 'ENFORCED', 'blue');
+    await delay(800);
+    setTl(2, 'done');
+
+    // Layer 4: SM Guaranty
+    setTl(3, 'current');
+    await delay(300);
+    if (netShort > 0) {
+      document.getElementById('cap-gty').textContent = fmt(netShort);
+      setBar('gty', Math.min(100, (netShort / grossLoss) * 100 + 15), fmt(netShort));
+      setAmt('gty', fmt(netShort));
+      setBadge('gty', 'SM PAYS', 'amber');
+    } else {
+      setBar('gty', 5, '');
+      setAmt('gty', '$0 — margin sufficient');
+      setBadge('gty', 'NOT REQUIRED', 'green');
+    }
+    await delay(900);
+    setTl(3, 'done');
+
+    // Layers 5-9: NOT triggered in isolated scenario
+    if (scenario === 'isolated') {
+      ['smcf','ficc','cf','cclf','assess'].forEach(id => {
+        setLayer(id, 'dimmed');
+        setBadge(id, 'NOT TRIGGERED', 'gray');
+        setAmt(id, '$0');
+      });
+      document.getElementById('cap-smcf').textContent = '~$100m';
+      document.getElementById('cap-ficc').textContent = '~$25m';
+      document.getElementById('cap-cf').textContent  = '~$10bn';
+    } else {
+      // Cascade: show SM CF being consumed
+      await delay(400);
+      const smCF = 100; // $100m example
+      setBar('smcf', 30, '$100m');
+      setAmt('smcf', '$100m deployed');
+      setBadge('smcf', 'CONSUMED', 'purple');
+      document.getElementById('cap-smcf').textContent = '$100m';
+      await delay(700);
+
+      setBar('ficc', 60, '$25m');
+      setAmt('ficc', '$25m deployed');
+      setBadge('ficc', 'CONSUMED', 'blue');
+      await delay(700);
+
+      const remaining = Math.max(0, netShort - smCF - 25);
+      if (remaining > 0) {
+        setBar('cf', Math.min(40, remaining / 100 * 4), fmt(remaining) + ' allocated');
+        setAmt('cf', fmt(remaining) + ' drawn');
+        setBadge('cf', 'PRO-RATA', 'red');
+      } else {
+        setAmt('cf', '$0 — prior layers sufficient');
+        setBadge('cf', 'NOT TRIGGERED', 'gray');
+      }
+      await delay(700);
+      setAmt('cclf', 'Liquidity as needed');
+      setBadge('cclf', 'STANDBY', 'gray');
+      setAmt('assess', 'Assess if needed');
+      setBadge('assess', 'LAST RESORT', 'gray');
+    }
+
+    // Final state
+    setTl(4, 'done');
+    await delay(400);
+
+    // Update summary cards
+    document.getElementById('sc-margin-total').textContent = fmt(totalMargin);
+    document.getElementById('sc-sm-total').textContent     = fmt(netShort);
+
+    // Insight banner
+    document.getElementById('ins-sm-risk').textContent     = fmt(netShort) + ' from own capital';
+    document.getElementById('ins-sm-risk').className       = 'i-val ' + (netShort > 0 ? 'amber' : 'green');
+    if (scenario === 'cascade') {
+      document.getElementById('ins-cf-triggered').textContent = 'Yes — SM also defaulted';
+      document.getElementById('ins-cf-triggered').className   = 'i-val red';
+      document.getElementById('ins-mutualized').textContent   = 'Partial — SM CF + FICC RE';
+      document.getElementById('ins-mutualized').className     = 'i-val amber';
+    } else {
+      document.getElementById('ins-cf-triggered').textContent = 'No — not triggered';
+      document.getElementById('ins-cf-triggered').className   = 'i-val green';
+      document.getElementById('ins-mutualized').textContent   = 'No — SM absorbs 100%';
+      document.getElementById('ins-mutualized').className     = 'i-val green';
+    }
+
+    animating = false;
+    document.getElementById('btn-run').disabled = false;
+  }
+
+  function resetWaterfall(silent) {
+    animating = false;
+    document.getElementById('btn-run').disabled = false;
+
+    // Reset timeline
+    [0,1,2,3,4].forEach(i => {
+      const el = document.getElementById('tl-' + i);
+      el.className = 'tl-dot idle';
+      el.textContent = i + 1;
+    });
+
+    // Reset layers
+    const allLayers = ['vm','im','lien','gty','smcf','ficc','cf','cclf','assess'];
+    allLayers.forEach(id => {
+      document.getElementById('layer-' + id).className = 'layer';
+      setBar(id, 0, '');
+      setAmt(id, '—');
+    });
+    setBadge('vm', 'PENDING', 'gray');
+    setBadge('im', 'PENDING', 'gray');
+    setBadge('lien', 'RULE 3A §16', 'blue');
+    setBadge('gty', 'SM OBLIGATED', 'amber');
+    setBadge('smcf', 'NOT TRIGGERED', 'gray');
+    setBadge('ficc', 'NOT TRIGGERED', 'gray');
+    setBadge('cf',   'NOT TRIGGERED', 'gray');
+    setBadge('cclf', 'LIQUIDITY ONLY', 'gray');
+    setBadge('assess','LAST RESORT', 'gray');
+
+    // Reset summaries
+    document.getElementById('sc-margin-total').textContent = '—';
+    document.getElementById('sc-sm-total').textContent     = '—';
+    document.getElementById('ins-sm-risk').textContent     = 'Run scenario →';
+    document.getElementById('ins-sm-risk').className       = 'i-val amber';
+    document.getElementById('ins-cf-triggered').textContent = 'No — not in isolated default';
+    document.getElementById('ins-cf-triggered').className  = 'i-val green';
+    document.getElementById('ins-mutualized').textContent  = 'No — SM absorbs 100%';
+    document.getElementById('ins-mutualized').className    = 'i-val green';
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  updateInputDisplay();
+</script>
+</body>
+</html>
